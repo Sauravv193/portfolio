@@ -146,13 +146,13 @@ class PortfolioApp {
             el.addEventListener('mouseenter', () => {
                 this.cursor.style.transform = 'scale(2)';
                 this.cursorFollower.style.transform = 'scale(0.5)';
-                this.cursor.style.background = '#10b981';
+                this.cursor.style.background = '#9e363a';
             });
 
             el.addEventListener('mouseleave', () => {
                 this.cursor.style.transform = 'scale(1)';
                 this.cursorFollower.style.transform = 'scale(1)';
-                this.cursor.style.background = '#0d9488';
+                this.cursor.style.background = '#0f2862';
             });
         });
     }
