@@ -7,7 +7,6 @@ class PortfolioApp {
         this.startPreloader();
         this.createParticles();
         this.setupCustomCursor();
-        this.initializeScrollAnimations();
         this.setupSkillAnimations();
         this.setupProjectFilters();
         this.setupFormValidation();
