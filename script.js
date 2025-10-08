@@ -147,13 +147,13 @@ class PortfolioApp {
             el.addEventListener('mouseenter', () => {
                 this.cursor.style.transform = 'scale(2)';
                 this.cursorFollower.style.transform = 'scale(0.5)';
-                this.cursor.style.background = '#4facfe';
+                this.cursor.style.background = '#10b981';
             });
 
             el.addEventListener('mouseleave', () => {
                 this.cursor.style.transform = 'scale(1)';
                 this.cursorFollower.style.transform = 'scale(1)';
-                this.cursor.style.background = '#667eea';
+                this.cursor.style.background = '#0d9488';
             });
         });
     }
@@ -682,8 +682,8 @@ document.head.appendChild(styleSheet);
 document.addEventListener('DOMContentLoaded', () => {
     new PortfolioApp();
     
-    console.log('%c🚀 Portfolio Loaded Successfully!', 'color: #4facfe; font-size: 16px; font-weight: bold;');
-    console.log('%cBuilt with modern web technologies and lots of ❤️', 'color: #667eea; font-size: 12px;');
+    console.log('%c🚀 Portfolio Loaded Successfully!', 'color: #10b981; font-size: 16px; font-weight: bold;');
+    console.log('%cBuilt with modern web technologies and lots of ❤️', 'color: #0d9488; font-size: 12px;');
 });
 
 // Performance optimization for scroll events
