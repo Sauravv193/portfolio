@@ -56,6 +56,9 @@ class PortfolioApp {
         
         // Form submission
         this.contactForm?.addEventListener('submit', (e) => this.handleFormSubmit(e));
+        
+        // Image loading optimization
+        this.optimizeImageLoading();
     }
 
     // Preloader Animation
@@ -580,6 +583,34 @@ class PortfolioApp {
         }
     }
 
+    // Image Loading Optimization
+    optimizeImageLoading() {
+        const images = document.querySelectorAll('.project-image img');
+        
+        images.forEach(img => {
+            // Add loading class
+            img.classList.add('loading');
+            
+            // Handle successful load
+            img.addEventListener('load', () => {
+                img.classList.remove('loading');
+                img.classList.add('loaded');
+            });
+            
+            // Handle error with retry mechanism
+            img.addEventListener('error', (e) => {
+                console.warn('Image failed to load:', img.src);
+                img.classList.remove('loading');
+                img.classList.add('error');
+                
+                // Trigger fallback if onerror attribute exists
+                if (img.onerror) {
+                    img.onerror();
+                }
+            });
+        });
+    }
+    
     // Utility Methods
     debounce(func, wait) {
         let timeout;
