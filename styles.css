@@ -1271,6 +1271,12 @@ body {
     color: var(--text-white);
 }
 
+.like-button:disabled {
+    cursor: wait;
+    opacity: 0.78;
+    transform: none;
+}
+
 /* Opportunities Marquee */
 .opportunities-section {
     padding: 30px 0;

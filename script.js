@@ -608,34 +608,127 @@ class PortfolioApp {
     setupEngagementCounters() {
         if (!this.visitorCount || !this.likeCount || !this.likeButton) return;
 
+        const counterApiBase = 'https://api.counterapi.dev/v1';
+        const counterNamespace = 'saurav-kumar-singh-portfolio';
+        const visitCounter = 'portfolio-visits';
+        const likeCounter = 'portfolio-likes';
         const visitKey = 'portfolioVisitCount';
         const sessionKey = 'portfolioVisitedThisSession';
         const likeKey = 'portfolioLikeCount';
         const likedKey = 'portfolioLiked';
-        let visits = Number(localStorage.getItem(visitKey)) || 0;
 
-        if (!sessionStorage.getItem(sessionKey)) {
-            visits += 1;
-            localStorage.setItem(visitKey, visits);
+        const updateCount = (element, value) => {
+            const count = Number(value);
+            if (Number.isFinite(count)) {
+                element.textContent = Math.max(0, Math.round(count));
+            }
+        };
+
+        const saveFallbackCount = (key, value) => {
+            if (Number.isFinite(Number(value))) {
+                localStorage.setItem(key, String(Math.max(0, Math.round(Number(value)))));
+            }
+        };
+
+        const requestCounter = async (name, action = '') => {
+            const path = action ? `/${action}` : '';
+            const response = await fetch(`${counterApiBase}/${counterNamespace}/${name}${path}`, {
+                cache: 'no-store'
+            });
+
+            if (!action && response.status === 404) {
+                return 0;
+            }
+
+            if (!response.ok) {
+                throw new Error(`Counter request failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const value = Number(
+                data.value ??
+                data.count ??
+                data.Count ??
+                data.data?.value ??
+                data.data?.count ??
+                data.data?.Count ??
+                data.data
+            );
+
+            if (!Number.isFinite(value)) {
+                throw new Error('Counter response did not include a number');
+            }
+
+            return value;
+        };
+
+        const refreshCounters = async () => {
+            try {
+                const [visits, likes] = await Promise.all([
+                    requestCounter(visitCounter),
+                    requestCounter(likeCounter)
+                ]);
+
+                updateCount(this.visitorCount, visits);
+                updateCount(this.likeCount, likes);
+                saveFallbackCount(visitKey, visits);
+                saveFallbackCount(likeKey, likes);
+            } catch (error) {
+                updateCount(this.visitorCount, Number(localStorage.getItem(visitKey)) || 0);
+                updateCount(this.likeCount, Number(localStorage.getItem(likeKey)) || 0);
+            }
+        };
+
+        const registerVisit = async () => {
+            if (sessionStorage.getItem(sessionKey)) {
+                await refreshCounters();
+                return;
+            }
+
             sessionStorage.setItem(sessionKey, 'true');
-        }
 
-        let likes = Number(localStorage.getItem(likeKey)) || 0;
-        const liked = localStorage.getItem(likedKey) === 'true';
+            try {
+                const visits = await requestCounter(visitCounter, 'up');
+                updateCount(this.visitorCount, visits);
+                saveFallbackCount(visitKey, visits);
+            } catch (error) {
+                const fallbackVisits = (Number(localStorage.getItem(visitKey)) || 0) + 1;
+                updateCount(this.visitorCount, fallbackVisits);
+                saveFallbackCount(visitKey, fallbackVisits);
+            }
+        };
 
-        this.visitorCount.textContent = visits;
-        this.likeCount.textContent = likes;
-        this.updateLikeButton(liked);
+        updateCount(this.visitorCount, Number(localStorage.getItem(visitKey)) || 0);
+        updateCount(this.likeCount, Number(localStorage.getItem(likeKey)) || 0);
+        this.updateLikeButton(localStorage.getItem(likedKey) === 'true');
 
-        this.likeButton.addEventListener('click', () => {
+        registerVisit();
+        refreshCounters();
+        setInterval(refreshCounters, 30000);
+
+        this.likeButton.addEventListener('click', async () => {
             const isLiked = localStorage.getItem(likedKey) === 'true';
-            likes = Number(localStorage.getItem(likeKey)) || 0;
-            likes = isLiked ? Math.max(0, likes - 1) : likes + 1;
+            const nextLiked = !isLiked;
+            const counterAction = nextLiked ? 'up' : 'down';
+            const fallbackLikes = Number(localStorage.getItem(likeKey)) || 0;
 
-            localStorage.setItem(likeKey, likes);
-            localStorage.setItem(likedKey, String(!isLiked));
-            this.likeCount.textContent = likes;
-            this.updateLikeButton(!isLiked);
+            this.likeButton.disabled = true;
+
+            try {
+                const likes = await requestCounter(likeCounter, counterAction);
+                updateCount(this.likeCount, likes);
+                saveFallbackCount(likeKey, likes);
+                localStorage.setItem(likedKey, String(nextLiked));
+                this.updateLikeButton(nextLiked);
+            } catch (error) {
+                const likes = nextLiked ? fallbackLikes + 1 : Math.max(0, fallbackLikes - 1);
+                updateCount(this.likeCount, likes);
+                saveFallbackCount(likeKey, likes);
+                localStorage.setItem(likedKey, String(nextLiked));
+                this.updateLikeButton(nextLiked);
+            } finally {
+                this.likeButton.disabled = false;
+            }
         });
     }
 

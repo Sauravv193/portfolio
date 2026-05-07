@@ -12,7 +12,7 @@ A modern, responsive portfolio website for Saurav Kumar Singh, built with HTML, 
 - Featured projects section with category filters
 - Contact section with email, phone, location, GitHub, and LinkedIn links
 - Interactive mini-game: "Catch the Signal"
-- Local visitor count and like button using browser storage
+- Shared visitor count and like button powered by CounterAPI, with browser storage fallback
 - Simplified footer with 2026 copyright text
 - Fully responsive layout for desktop, tablet, and mobile
 
@@ -53,4 +53,4 @@ http://localhost:8000
 
 ## Notes
 
-The visitor and like counts are stored locally in the browser with `localStorage` and `sessionStorage`. A backend or database service would be needed for live global counts across all visitors.
+The visitor and like counts use CounterAPI public counters so totals can update across devices. `localStorage` and `sessionStorage` are still used to remember whether the current browser already counted this session/like and to provide a fallback if the counter API is unavailable.
