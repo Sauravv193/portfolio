@@ -2,6 +2,10 @@
 
 class PortfolioApp {
     constructor() {
+        this.emailJsServiceId = 'YOUR_EMAILJS_SERVICE_ID';
+        this.emailJsTemplateId = 'YOUR_EMAILJS_TEMPLATE_ID';
+        this.emailJsPublicKey = 'YOUR_EMAILJS_PUBLIC_KEY';
+
         this.initializeElements();
         this.initializeEventListeners();
         this.startPreloader();
@@ -9,7 +13,6 @@ class PortfolioApp {
         this.setupCustomCursor();
         this.setupSkillAnimations();
         this.setupProjectFilters();
-        this.setupFormValidation();
     }
 
     initializeElements() {
@@ -28,13 +31,29 @@ class PortfolioApp {
         this.skillBars = document.querySelectorAll('.skill-progress');
         this.filterButtons = document.querySelectorAll('.filter-btn');
         this.projectCards = document.querySelectorAll('.project-card');
-        this.contactForm = document.getElementById('contactForm');
         this.statNumbers = document.querySelectorAll('.stat-number');
+        this.gameBoard = document.getElementById('gameBoard');
+        this.signalTarget = document.getElementById('signalTarget');
+        this.gameScore = document.getElementById('gameScore');
+        this.gameTime = document.getElementById('gameTime');
+        this.bestScore = document.getElementById('bestScore');
+        this.startGameBtn = document.getElementById('startGameBtn');
+        this.resetGameBtn = document.getElementById('resetGameBtn');
+        this.visitorCount = document.getElementById('visitorCount');
+        this.likeCount = document.getElementById('likeCount');
+        this.likeButton = document.getElementById('likeButton');
 
         // Animation elements
         this.fadeElements = document.querySelectorAll('.fade-in');
         this.floatingCards = document.querySelectorAll('.floating-card');
         this.profileImage = document.querySelector('.profile-image img');
+
+        this.gameState = {
+            score: 0,
+            time: 30,
+            active: false,
+            timer: null
+        };
     }
 
     initializeEventListeners() {
@@ -54,34 +73,63 @@ class PortfolioApp {
         // Intersection Observer
         this.observeElements();
         
-        // Form submission
-        this.contactForm?.addEventListener('submit', (e) => this.handleFormSubmit(e));
-        
         // Image loading optimization
         this.optimizeImageLoading();
+
+        this.setupMiniGame();
+        this.setupEngagementCounters();
     }
 
     // Preloader Animation
     startPreloader() {
         const loadingProgress = document.querySelector('.loading-progress');
+        const loadingPercentage = document.querySelector('.loading-percentage');
+        if (!this.preloader || !loadingProgress || !loadingPercentage) return;
+
         let progress = 0;
-        
+        let finished = false;
+        const startedAt = Date.now();
+        const minimumLoadTime = 1200;
+
+        const updateLoader = (value) => {
+            progress = Math.min(100, Math.max(0, value));
+            loadingProgress.style.width = `${progress}%`;
+            loadingPercentage.textContent = `${Math.round(progress)}%`;
+        };
+
         const interval = setInterval(() => {
-            progress += Math.random() * 10;
-            if (progress >= 100) {
-                progress = 100;
-                loadingProgress.style.width = '100%';
-                
+            if (finished) return;
+
+            const nextProgress = progress + Math.random() * 8 + 3;
+            updateLoader(Math.min(nextProgress, 92));
+        }, 140);
+
+        const finishLoader = () => {
+            if (finished) return;
+            finished = true;
+            clearInterval(interval);
+
+            const remainingTime = Math.max(0, minimumLoadTime - (Date.now() - startedAt));
+
+            setTimeout(() => {
+                updateLoader(100);
+
                 setTimeout(() => {
                     this.preloader.classList.add('hidden');
                     this.animateHeroEntry();
-                }, 800);
-                
-                clearInterval(interval);
-            } else {
-                loadingProgress.style.width = progress + '%';
-            }
-        }, 200);
+                }, 450);
+            }, remainingTime);
+        };
+
+        updateLoader(0);
+
+        if (document.readyState === 'complete') {
+            setTimeout(finishLoader, 300);
+        } else {
+            window.addEventListener('load', finishLoader, { once: true });
+        }
+
+        setTimeout(finishLoader, 4000);
     }
 
     // Hero Section Entry Animation
@@ -234,7 +282,6 @@ class PortfolioApp {
         requestAnimationFrame(() => {
             this.updateNavbarOnScroll();
             this.updateActiveSection();
-            this.handleParallaxEffect();
         });
     }
 
@@ -242,13 +289,9 @@ class PortfolioApp {
         const scrollY = window.scrollY;
         
         if (scrollY > 100) {
-            this.navContainer.style.background = 'rgba(255, 255, 255, 0.95)';
-            this.navContainer.style.backdropFilter = 'blur(25px)';
-            this.navContainer.style.transform = 'translateX(-50%) scale(0.95)';
+            this.navContainer.classList.add('scrolled');
         } else {
-            this.navContainer.style.background = 'rgba(255, 255, 255, 0.1)';
-            this.navContainer.style.backdropFilter = 'blur(20px)';
-            this.navContainer.style.transform = 'translateX(-50%) scale(1)';
+            this.navContainer.classList.remove('scrolled');
         }
     }
 
@@ -272,19 +315,7 @@ class PortfolioApp {
     }
 
     handleParallaxEffect() {
-        const scrolled = window.pageYOffset;
-        const heroSection = document.querySelector('.hero-section');
-        
-        if (heroSection) {
-            const speed = 0.5;
-            heroSection.style.transform = `translateY(${scrolled * speed}px)`;
-        }
-
-        // Parallax for floating cards
-        this.floatingCards.forEach((card, index) => {
-            const speed = 0.2 + (index * 0.1);
-            card.style.transform += ` translateY(${scrolled * speed * 0.1}px)`;
-        });
+        // Parallax behavior removed to prevent scroll layout issues.
     }
 
     // Intersection Observer for Animations
@@ -452,98 +483,170 @@ class PortfolioApp {
         setTimeout(() => ripple.remove(), 600);
     }
 
-    // Form Handling
-    setupFormValidation() {
-        const inputs = document.querySelectorAll('.form-group input, .form-group textarea');
-        
-        inputs.forEach(input => {
-            input.addEventListener('focus', () => {
-                input.parentElement.classList.add('focused');
-            });
-            
-            input.addEventListener('blur', () => {
-                if (!input.value) {
-                    input.parentElement.classList.remove('focused');
-                }
-            });
-            
-            input.addEventListener('input', () => {
-                this.validateField(input);
-            });
-        });
+    setupMiniGame() {
+        if (!this.gameBoard || !this.signalTarget) return;
+
+        const savedBest = Number(localStorage.getItem('portfolioBestScore')) || 0;
+        this.bestScore.textContent = savedBest;
+        this.positionSignalTarget();
+
+        this.startGameBtn?.addEventListener('click', () => this.toggleMiniGame());
+        this.resetGameBtn?.addEventListener('click', () => this.resetMiniGame());
+        this.signalTarget.addEventListener('click', () => this.catchSignal());
+        window.addEventListener('resize', () => this.positionSignalTarget());
     }
 
-    validateField(field) {
-        const value = field.value.trim();
-        const fieldType = field.type;
-        let isValid = true;
-        
-        if (fieldType === 'email') {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            isValid = emailRegex.test(value);
-        } else {
-            isValid = value.length > 0;
-        }
-        
-        if (isValid) {
-            field.parentElement.classList.remove('error');
-            field.parentElement.classList.add('success');
-        } else {
-            field.parentElement.classList.remove('success');
-            field.parentElement.classList.add('error');
-        }
-        
-        return isValid;
-    }
-
-    handleFormSubmit(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this.contactForm);
-        const submitBtn = this.contactForm.querySelector('.submit-btn');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const btnIcon = submitBtn.querySelector('.btn-icon');
-        
-        // Validate all fields
-        const inputs = this.contactForm.querySelectorAll('input, textarea');
-        let allValid = true;
-        
-        inputs.forEach(input => {
-            if (!this.validateField(input)) {
-                allValid = false;
-            }
-        });
-        
-        if (!allValid) {
-            this.showNotification('Please fill in all fields correctly.', 'error');
+    toggleMiniGame() {
+        if (this.gameState.active) {
+            this.stopMiniGame();
             return;
         }
-        
-        // Show loading state
-        btnText.textContent = 'Sending...';
-        btnIcon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        submitBtn.disabled = true;
-        
-        // Simulate form submission
-        setTimeout(() => {
-            btnText.textContent = 'Message Sent!';
-            btnIcon.innerHTML = '<i class="fas fa-check"></i>';
-            
-            this.showNotification('Thank you! Your message has been sent successfully.', 'success');
-            
-            setTimeout(() => {
-                btnText.textContent = 'Send Message';
-                btnIcon.innerHTML = '<i class="fas fa-paper-plane"></i>';
-                submitBtn.disabled = false;
-                this.contactForm.reset();
-                
-                // Remove focused classes
-                inputs.forEach(input => {
-                    input.parentElement.classList.remove('focused', 'success');
-                });
-            }, 2000);
-        }, 2000);
+
+        this.startMiniGame();
     }
+
+    startMiniGame() {
+        if (this.gameState.active) return;
+
+        this.gameState.score = 0;
+        this.gameState.time = 30;
+        this.gameState.active = true;
+        this.updateGameStats();
+        this.updateStartGameButton(true);
+        this.positionSignalTarget();
+
+        this.gameState.timer = setInterval(() => {
+            this.gameState.time -= 1;
+            this.updateGameStats();
+
+            if (this.gameState.time <= 0) {
+                this.endMiniGame();
+            }
+        }, 1000);
+    }
+
+    catchSignal() {
+        if (!this.gameState.active) {
+            this.startMiniGame();
+            return;
+        }
+
+        this.gameState.score += 1;
+        this.updateGameStats();
+        this.updateBestScore();
+        this.positionSignalTarget();
+    }
+
+    resetMiniGame() {
+        clearInterval(this.gameState.timer);
+        this.gameState.score = 0;
+        this.gameState.time = 30;
+        this.gameState.active = false;
+        this.updateGameStats();
+        this.updateStartGameButton(false);
+        this.positionSignalTarget();
+    }
+
+    endMiniGame() {
+        clearInterval(this.gameState.timer);
+        this.gameState.active = false;
+        this.updateBestScore();
+        this.updateStartGameButton(false);
+    }
+
+    stopMiniGame() {
+        clearInterval(this.gameState.timer);
+        this.gameState.active = false;
+        this.updateBestScore();
+        this.updateStartGameButton(false);
+    }
+
+    updateBestScore() {
+        const savedBest = Number(localStorage.getItem('portfolioBestScore')) || 0;
+        if (this.gameState.score > savedBest) {
+            localStorage.setItem('portfolioBestScore', this.gameState.score);
+            this.bestScore.textContent = this.gameState.score;
+        }
+    }
+
+    updateStartGameButton(isPlaying) {
+        const icon = this.startGameBtn?.querySelector('i');
+        const label = this.startGameBtn?.querySelector('span');
+
+        if (icon) {
+            icon.className = isPlaying ? 'fas fa-stop' : 'fas fa-play';
+        }
+
+        if (label) {
+            label.textContent = isPlaying ? 'Stop' : 'Start';
+        }
+    }
+
+    updateGameStats() {
+        if (this.gameScore) this.gameScore.textContent = this.gameState.score;
+        if (this.gameTime) this.gameTime.textContent = this.gameState.time;
+    }
+
+    positionSignalTarget() {
+        if (!this.gameBoard || !this.signalTarget) return;
+
+        const boardWidth = this.gameBoard.clientWidth;
+        const boardHeight = this.gameBoard.clientHeight;
+        const targetSize = this.signalTarget.offsetWidth || 58;
+        const padding = 18;
+        const minX = padding + targetSize / 2;
+        const minY = padding + targetSize / 2;
+        const maxX = Math.max(minX, boardWidth - padding - targetSize / 2);
+        const maxY = Math.max(minY, boardHeight - padding - targetSize / 2);
+        const nextX = minX + Math.random() * (maxX - minX);
+        const nextY = minY + Math.random() * (maxY - minY);
+
+        this.signalTarget.style.left = `${nextX}px`;
+        this.signalTarget.style.top = `${nextY}px`;
+    }
+
+    setupEngagementCounters() {
+        if (!this.visitorCount || !this.likeCount || !this.likeButton) return;
+
+        const visitKey = 'portfolioVisitCount';
+        const sessionKey = 'portfolioVisitedThisSession';
+        const likeKey = 'portfolioLikeCount';
+        const likedKey = 'portfolioLiked';
+        let visits = Number(localStorage.getItem(visitKey)) || 0;
+
+        if (!sessionStorage.getItem(sessionKey)) {
+            visits += 1;
+            localStorage.setItem(visitKey, visits);
+            sessionStorage.setItem(sessionKey, 'true');
+        }
+
+        let likes = Number(localStorage.getItem(likeKey)) || 0;
+        const liked = localStorage.getItem(likedKey) === 'true';
+
+        this.visitorCount.textContent = visits;
+        this.likeCount.textContent = likes;
+        this.updateLikeButton(liked);
+
+        this.likeButton.addEventListener('click', () => {
+            const isLiked = localStorage.getItem(likedKey) === 'true';
+            likes = Number(localStorage.getItem(likeKey)) || 0;
+            likes = isLiked ? Math.max(0, likes - 1) : likes + 1;
+
+            localStorage.setItem(likeKey, likes);
+            localStorage.setItem(likedKey, String(!isLiked));
+            this.likeCount.textContent = likes;
+            this.updateLikeButton(!isLiked);
+        });
+    }
+
+    updateLikeButton(isLiked) {
+        if (!this.likeButton) return;
+
+        this.likeButton.classList.toggle('liked', isLiked);
+        this.likeButton.setAttribute('aria-pressed', String(isLiked));
+    }
+
+
 
     showNotification(message, type) {
         const notification = document.createElement('div');

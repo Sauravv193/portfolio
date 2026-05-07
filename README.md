@@ -1,34 +1,56 @@
 # Saurav Kumar Singh - Portfolio
 
+A modern, responsive portfolio website for Saurav Kumar Singh, built with HTML, CSS, and JavaScript. It showcases profile details, technical skills, featured projects, contact information, and small interactive touches for visitors.
 
+## Current Status
 
-A modern, interactive portfolio website showcasing my skills, projects, and professional experience as a Java Full Stack Developer.
+- Light cream portfolio theme with glass-style cards and smooth animations
+- Working preloader with visible loading percentage
+- Hero section with profile image and floating technology cards
+- About section with education, location, specialization, stats, and profile summary
+- Skills section with animated progress bars
+- Featured projects section with category filters
+- Contact section with email, phone, location, GitHub, and LinkedIn links
+- Interactive mini-game: "Catch the Signal"
+- Local visitor count and like button using browser storage
+- Simplified footer with 2026 copyright text
+- Fully responsive layout for desktop, tablet, and mobile
 
- Features
+## Tech Stack
 
-- Elegant Book-style Design: Flip-through page navigation with smooth animations
-- Responsive Layout: Works on all device sizes
-- Interactive Elements: 
-  - 3D hover effects
-  - Floating animations
-  - Smooth page transitions
-- Complete Professional Profile:
-  - Education details
-  - Technical skills
-  - Project showcase
-  - Certifications
-  - Contact information
+- HTML5
+- CSS3
+- JavaScript
+- Font Awesome icons
+- Google Fonts: Inter and Playfair Display
 
-Technologies Used
+## Project Structure
 
-- Frontend: HTML5, CSS3, JavaScript
-- Animation Library: GSAP
-- Icons: Font Awesome
-- Fonts: Google Fonts (Playfair Display, Montserrat)
+```text
+portfolio/
+|-- index.html
+|-- styles.css
+|-- script.js
+|-- photo.jpg
+`-- README.md
+```
 
-Setup Instructions
+## How to Run
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Sauravv193/portfolio.git
-   cd portfolio
+Open `index.html` directly in a browser.
+
+For a local server, you can also run:
+
+```bash
+python -m http.server 8000
+```
+
+Then visit:
+
+```text
+http://localhost:8000
+```
+
+## Notes
+
+The visitor and like counts are stored locally in the browser with `localStorage` and `sessionStorage`. A backend or database service would be needed for live global counts across all visitors.
