@@ -28,10 +28,13 @@ A modern, responsive portfolio website for Saurav Kumar Singh, built with HTML, 
 
 ```text
 portfolio/
+|-- assets/
+|   `-- projects/
+|       |-- saurav.jpg
+|       `-- project thumbnails
 |-- index.html
 |-- styles.css
 |-- script.js
-|-- photo.jpg
 `-- README.md
 ```
 
