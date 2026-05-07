@@ -781,25 +781,26 @@ class PortfolioApp {
         const images = document.querySelectorAll('.project-image img');
         
         images.forEach(img => {
-            // Add loading class
+            const markLoaded = () => {
+                img.classList.remove('loading');
+                img.classList.add('loaded');
+            };
+
+            if (img.complete && img.naturalWidth > 0) {
+                markLoaded();
+                return;
+            }
+
             img.classList.add('loading');
             
             // Handle successful load
-            img.addEventListener('load', () => {
-                img.classList.remove('loading');
-                img.classList.add('loaded');
-            });
+            img.addEventListener('load', markLoaded);
             
             // Handle error with retry mechanism
-            img.addEventListener('error', (e) => {
+            img.addEventListener('error', () => {
                 console.warn('Image failed to load:', img.src);
                 img.classList.remove('loading');
                 img.classList.add('error');
-                
-                // Trigger fallback if onerror attribute exists
-                if (img.onerror) {
-                    img.onerror();
-                }
             });
         });
     }
