@@ -187,29 +187,46 @@ class PortfolioApp {
 
     // Custom Cursor
     setupCustomCursor() {
-        if (window.innerWidth <= 768) return; // Disable on mobile
+        if (!this.cursor || !this.cursorFollower) return;
 
-        const interactiveElements = document.querySelectorAll(
-            'a, button, .project-card, .skill-category, .nav-link, .filter-btn'
-        );
+        this.cursorTargetSelector = 'a, button, .project-card, .skill-category, .nav-link, .filter-btn';
+        this.syncCustomCursor();
 
-        interactiveElements.forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                this.cursor.style.transform = 'scale(2)';
-                this.cursorFollower.style.transform = 'scale(0.5)';
-                this.cursor.style.background = '#9e363a';
-            });
+        document.addEventListener('mouseover', (event) => {
+            if (!this.customCursorEnabled) return;
 
-            el.addEventListener('mouseleave', () => {
-                this.cursor.style.transform = 'scale(1)';
-                this.cursorFollower.style.transform = 'scale(1)';
-                this.cursor.style.background = '#0f2862';
-            });
+            if (event.target.closest(this.cursorTargetSelector)) {
+                document.body.classList.add('cursor-hover');
+            }
+        });
+
+        document.addEventListener('mouseout', (event) => {
+            if (!this.customCursorEnabled) return;
+
+            const target = event.target.closest(this.cursorTargetSelector);
+            if (!target || target.contains(event.relatedTarget)) return;
+
+            document.body.classList.remove('cursor-hover');
         });
     }
 
+    syncCustomCursor() {
+        if (!this.cursor || !this.cursorFollower) return;
+
+        this.customCursorEnabled = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        document.body.classList.toggle('custom-cursor-enabled', this.customCursorEnabled);
+        document.body.classList.remove('cursor-hover');
+
+        if (!this.customCursorEnabled) {
+            this.cursor.style.left = '';
+            this.cursor.style.top = '';
+            this.cursorFollower.style.left = '';
+            this.cursorFollower.style.top = '';
+        }
+    }
+
     updateCursor(e) {
-        if (window.innerWidth <= 768) return;
+        if (!this.customCursorEnabled || !this.cursor || !this.cursorFollower) return;
 
         requestAnimationFrame(() => {
             this.cursor.style.left = e.clientX + 'px';
@@ -629,7 +646,7 @@ class PortfolioApp {
         };
 
         const requestCounter = async (name, action = 'get') => {
-            const response = await fetch(`${counterApiBase}/${action}/${name}`, {
+            const response = await fetch(`${counterApiBase}/${action}/${encodeURIComponent(name)}`, {
                 cache: 'no-store'
             });
 
@@ -658,6 +675,26 @@ class PortfolioApp {
             }
 
             return value;
+        };
+
+        const setCounter = async (name, value) => {
+            const nextValue = Math.max(0, Math.round(Number(value) || 0));
+            const response = await fetch(`${counterApiBase}/set/${encodeURIComponent(name)}?value=${nextValue}`, {
+                cache: 'no-store'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Counter set failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const savedValue = Number(data.value ?? data.count ?? data.data?.value ?? data.data);
+
+            if (!Number.isFinite(savedValue)) {
+                throw new Error('Counter set response did not include a number');
+            }
+
+            return savedValue;
         };
 
         const refreshCounters = async () => {
@@ -698,27 +735,26 @@ class PortfolioApp {
 
         this.likeButton.addEventListener('click', async () => {
             const isLiked = localStorage.getItem(likedKey) === 'true';
+            const nextLiked = !isLiked;
             const fallbackLikes = Number(localStorage.getItem(likeKey)) || 0;
-
-            if (isLiked) {
-                this.updateLikeButton(true);
-                return;
-            }
 
             this.likeButton.disabled = true;
 
             try {
-                const likes = await requestCounter(likeCounter, 'hit');
+                const likes = nextLiked
+                    ? await requestCounter(likeCounter, 'hit')
+                    : await setCounter(likeCounter, Math.max(0, await requestCounter(likeCounter) - 1));
+
                 updateCount(this.likeCount, likes);
                 saveFallbackCount(likeKey, likes);
-                localStorage.setItem(likedKey, 'true');
-                this.updateLikeButton(true);
+                localStorage.setItem(likedKey, String(nextLiked));
+                this.updateLikeButton(nextLiked);
             } catch (error) {
-                const likes = fallbackLikes + 1;
+                const likes = nextLiked ? fallbackLikes + 1 : Math.max(0, fallbackLikes - 1);
                 updateCount(this.likeCount, likes);
                 saveFallbackCount(likeKey, likes);
-                localStorage.setItem(likedKey, 'true');
-                this.updateLikeButton(true);
+                localStorage.setItem(likedKey, String(nextLiked));
+                this.updateLikeButton(nextLiked);
             } finally {
                 this.likeButton.disabled = false;
             }
@@ -762,14 +798,7 @@ class PortfolioApp {
             this.createParticles();
         }
         
-        // Update cursor behavior
-        if (window.innerWidth <= 768) {
-            this.cursor.style.display = 'none';
-            this.cursorFollower.style.display = 'none';
-        } else {
-            this.cursor.style.display = 'block';
-            this.cursorFollower.style.display = 'block';
-        }
+        this.syncCustomCursor();
     }
 
     // Image Loading Optimization
