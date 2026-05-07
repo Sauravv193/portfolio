@@ -608,12 +608,10 @@ class PortfolioApp {
     setupEngagementCounters() {
         if (!this.visitorCount || !this.likeCount || !this.likeButton) return;
 
-        const counterApiBase = 'https://api.counterapi.dev/v1';
-        const counterNamespace = 'saurav-kumar-singh-portfolio';
-        const visitCounter = 'portfolio-visits';
-        const likeCounter = 'portfolio-likes';
+        const counterApiBase = 'https://countapi.mileshilliard.com/api/v1';
+        const visitCounter = 'saurav-kumar-singh-portfolio-visits';
+        const likeCounter = 'saurav-kumar-singh-portfolio-likes';
         const visitKey = 'portfolioVisitCount';
-        const sessionKey = 'portfolioVisitedThisSession';
         const likeKey = 'portfolioLikeCount';
         const likedKey = 'portfolioLiked';
 
@@ -630,13 +628,12 @@ class PortfolioApp {
             }
         };
 
-        const requestCounter = async (name, action = '') => {
-            const path = action ? `/${action}` : '';
-            const response = await fetch(`${counterApiBase}/${counterNamespace}/${name}${path}`, {
+        const requestCounter = async (name, action = 'get') => {
+            const response = await fetch(`${counterApiBase}/${action}/${name}`, {
                 cache: 'no-store'
             });
 
-            if (!action && response.status === 404) {
+            if (action === 'get' && response.status === 404) {
                 return 0;
             }
 
@@ -649,6 +646,7 @@ class PortfolioApp {
                 data.value ??
                 data.count ??
                 data.Count ??
+                data.old_value ??
                 data.data?.value ??
                 data.data?.count ??
                 data.data?.Count ??
@@ -680,15 +678,8 @@ class PortfolioApp {
         };
 
         const registerVisit = async () => {
-            if (sessionStorage.getItem(sessionKey)) {
-                await refreshCounters();
-                return;
-            }
-
-            sessionStorage.setItem(sessionKey, 'true');
-
             try {
-                const visits = await requestCounter(visitCounter, 'up');
+                const visits = await requestCounter(visitCounter, 'hit');
                 updateCount(this.visitorCount, visits);
                 saveFallbackCount(visitKey, visits);
             } catch (error) {
@@ -702,30 +693,32 @@ class PortfolioApp {
         updateCount(this.likeCount, Number(localStorage.getItem(likeKey)) || 0);
         this.updateLikeButton(localStorage.getItem(likedKey) === 'true');
 
-        registerVisit();
-        refreshCounters();
+        registerVisit().finally(refreshCounters);
         setInterval(refreshCounters, 30000);
 
         this.likeButton.addEventListener('click', async () => {
             const isLiked = localStorage.getItem(likedKey) === 'true';
-            const nextLiked = !isLiked;
-            const counterAction = nextLiked ? 'up' : 'down';
             const fallbackLikes = Number(localStorage.getItem(likeKey)) || 0;
+
+            if (isLiked) {
+                this.updateLikeButton(true);
+                return;
+            }
 
             this.likeButton.disabled = true;
 
             try {
-                const likes = await requestCounter(likeCounter, counterAction);
+                const likes = await requestCounter(likeCounter, 'hit');
                 updateCount(this.likeCount, likes);
                 saveFallbackCount(likeKey, likes);
-                localStorage.setItem(likedKey, String(nextLiked));
-                this.updateLikeButton(nextLiked);
+                localStorage.setItem(likedKey, 'true');
+                this.updateLikeButton(true);
             } catch (error) {
-                const likes = nextLiked ? fallbackLikes + 1 : Math.max(0, fallbackLikes - 1);
+                const likes = fallbackLikes + 1;
                 updateCount(this.likeCount, likes);
                 saveFallbackCount(likeKey, likes);
-                localStorage.setItem(likedKey, String(nextLiked));
-                this.updateLikeButton(nextLiked);
+                localStorage.setItem(likedKey, 'true');
+                this.updateLikeButton(true);
             } finally {
                 this.likeButton.disabled = false;
             }
