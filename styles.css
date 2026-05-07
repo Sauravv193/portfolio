@@ -66,21 +66,6 @@ body {
     transition: opacity 0.2s ease, transform 0.1s ease, background 0.2s ease;
 }
 
-.cursor-follower {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 30px;
-    height: 30px;
-    border: 2px solid var(--primary-color);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9998;
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1);
-    transition: opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-}
-
 body.custom-cursor-enabled,
 body.custom-cursor-enabled a,
 body.custom-cursor-enabled button,
@@ -95,23 +80,13 @@ body.custom-cursor-enabled .cursor {
     opacity: 1;
 }
 
-body.custom-cursor-enabled .cursor-follower {
-    opacity: 0.5;
-}
-
 body.cursor-hover .cursor {
     background: #9e363a;
-    transform: translate(-50%, -50%) scale(2);
-}
-
-body.cursor-hover .cursor-follower {
-    border-color: #9e363a;
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translate(-50%, -50%) scale(1.45);
 }
 
 @media (hover: none), (pointer: coarse) {
-    .cursor,
-    .cursor-follower {
+    .cursor {
         display: none;
     }
 }

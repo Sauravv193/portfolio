@@ -187,7 +187,7 @@ class PortfolioApp {
 
     // Custom Cursor
     setupCustomCursor() {
-        if (!this.cursor || !this.cursorFollower) return;
+        if (!this.cursor) return;
 
         this.cursorTargetSelector = 'a, button, .project-card, .skill-category, .nav-link, .filter-btn';
         this.syncCustomCursor();
@@ -211,7 +211,7 @@ class PortfolioApp {
     }
 
     syncCustomCursor() {
-        if (!this.cursor || !this.cursorFollower) return;
+        if (!this.cursor) return;
 
         this.customCursorEnabled = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
         document.body.classList.toggle('custom-cursor-enabled', this.customCursorEnabled);
@@ -220,22 +220,15 @@ class PortfolioApp {
         if (!this.customCursorEnabled) {
             this.cursor.style.left = '';
             this.cursor.style.top = '';
-            this.cursorFollower.style.left = '';
-            this.cursorFollower.style.top = '';
         }
     }
 
     updateCursor(e) {
-        if (!this.customCursorEnabled || !this.cursor || !this.cursorFollower) return;
+        if (!this.customCursorEnabled || !this.cursor) return;
 
         requestAnimationFrame(() => {
             this.cursor.style.left = e.clientX + 'px';
             this.cursor.style.top = e.clientY + 'px';
-            
-            setTimeout(() => {
-                this.cursorFollower.style.left = e.clientX + 'px';
-                this.cursorFollower.style.top = e.clientY + 'px';
-            }, 100);
         });
     }
 
@@ -630,7 +623,7 @@ class PortfolioApp {
         const likeCounter = 'saurav-kumar-singh-portfolio-likes';
         const visitKey = 'portfolioVisitCount';
         const likeKey = 'portfolioLikeCount';
-        const likedKey = 'portfolioLiked';
+        const likedKey = 'portfolioLikedV2';
 
         const updateCount = (element, value) => {
             const count = Number(value);
@@ -677,26 +670,6 @@ class PortfolioApp {
             return value;
         };
 
-        const setCounter = async (name, value) => {
-            const nextValue = Math.max(0, Math.round(Number(value) || 0));
-            const response = await fetch(`${counterApiBase}/set/${encodeURIComponent(name)}?value=${nextValue}`, {
-                cache: 'no-store'
-            });
-
-            if (!response.ok) {
-                throw new Error(`Counter set failed: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const savedValue = Number(data.value ?? data.count ?? data.data?.value ?? data.data);
-
-            if (!Number.isFinite(savedValue)) {
-                throw new Error('Counter set response did not include a number');
-            }
-
-            return savedValue;
-        };
-
         const refreshCounters = async () => {
             try {
                 const [visits, likes] = await Promise.all([
@@ -735,26 +708,28 @@ class PortfolioApp {
 
         this.likeButton.addEventListener('click', async () => {
             const isLiked = localStorage.getItem(likedKey) === 'true';
-            const nextLiked = !isLiked;
             const fallbackLikes = Number(localStorage.getItem(likeKey)) || 0;
+
+            if (isLiked) {
+                await refreshCounters();
+                this.updateLikeButton(true);
+                return;
+            }
 
             this.likeButton.disabled = true;
 
             try {
-                const likes = nextLiked
-                    ? await requestCounter(likeCounter, 'hit')
-                    : await setCounter(likeCounter, Math.max(0, await requestCounter(likeCounter) - 1));
-
+                const likes = await requestCounter(likeCounter, 'hit');
                 updateCount(this.likeCount, likes);
                 saveFallbackCount(likeKey, likes);
-                localStorage.setItem(likedKey, String(nextLiked));
-                this.updateLikeButton(nextLiked);
+                localStorage.setItem(likedKey, 'true');
+                this.updateLikeButton(true);
             } catch (error) {
-                const likes = nextLiked ? fallbackLikes + 1 : Math.max(0, fallbackLikes - 1);
+                const likes = fallbackLikes + 1;
                 updateCount(this.likeCount, likes);
                 saveFallbackCount(likeKey, likes);
-                localStorage.setItem(likedKey, String(nextLiked));
-                this.updateLikeButton(nextLiked);
+                localStorage.setItem(likedKey, 'true');
+                this.updateLikeButton(true);
             } finally {
                 this.likeButton.disabled = false;
             }
