@@ -1,20 +1,7 @@
 # Saurav Kumar Singh - Portfolio
 
-A modern, responsive portfolio website for Saurav Kumar Singh, built with HTML, CSS, and JavaScript. It showcases profile details, technical skills, featured projects, contact information, and small interactive touches for visitors.
+A modern, responsive portfolio website, built with HTML, CSS, and JavaScript. It showcases profile details, technical skills, featured projects, contact information, and small interactive touches for visitors.
 
-## Current Status
-
-- Light cream portfolio theme with glass-style cards and smooth animations
-- Working preloader with visible loading percentage
-- Hero section with profile image and floating technology cards
-- About section with education, location, specialization, stats, and profile summary
-- Skills section with animated progress bars
-- Featured projects section with category filters
-- Contact section with email, phone, location, GitHub, and LinkedIn links
-- Interactive mini-game: "Catch the Signal"
-- Shared visitor count and like button powered by CountAPI, with browser storage fallback
-- Simplified footer with 2026 copyright text
-- Fully responsive layout for desktop, tablet, and mobile
 
 ## Tech Stack
 
